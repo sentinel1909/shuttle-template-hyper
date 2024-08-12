@@ -10,7 +10,6 @@ use hyper_util::rt::TokioIo;
 use std::convert::Infallible;
 use tokio::net::TcpListener;
 use tokio::signal;
-use tokio::sync::broadcast;
 
 // Customize this struct with things from `shuttle_main` needed in `bind`,
 // such as secrets or database connections
@@ -21,41 +20,45 @@ impl shuttle_runtime::Service for HyperService {
     async fn bind(self, addr: std::net::SocketAddr) -> Result<(), shuttle_runtime::Error> {
         let listener = TcpListener::bind(addr).await?;
 
-        let (shutdown_tx, mut shutdown_rx) = broadcast::channel(1);
+        let http = http1::Builder::new();
 
-        tokio::spawn(async move {
-            signal::ctrl_c()
-                .await
-                .expect("Failed to install Ctrl-C handler");
-            let _ = shutdown_tx.send(());
-        });
+        let graceful = hyper_util::server::graceful::GracefulShutdown::new();
+
+        let mut signal = std::pin::pin!(shutdown_signal());
 
         loop {
             tokio::select! {
-                _ = shutdown_rx.recv() => {
-                    println!("Shutdown signal received. Stopping server.");
-                    break;
-                }
-                Ok((stream,  _)) = listener.accept() => {
+                Ok((stream, _addr)) = listener.accept() => {
                     let io = TokioIo::new(stream);
-                    tokio::task::spawn(async move {
-                        if let Err(err) = http1::Builder::new()
-                            .serve_connection(io, service_fn(hello))
-                            .await
-                        {
-                            eprintln!("Error serving connection: {:?}", err);
+                    let conn = http.serve_connection(io, service_fn(health_check));
+                    let fut = graceful.watch(conn);
+                    tokio::spawn(async move {
+                        if let Err(e) = fut.await {
+                            eprintln!("Error serving conection: {:?}", e);
                         }
                     });
+                },
+
+                _ = &mut signal => {
+                    eprintln!("Graceful shtudown signal received...");
+                    break Ok(());
                 }
             }
         }
-        Ok(())
+            
     }
 }
 
-// handler function, returns the message Hello, World!
-async fn hello(_: Request<hyper::body::Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
-    Ok(Response::new(Full::new(Bytes::from("Hello, World!"))))
+// function which provides a graceful shutdown signal
+async fn shutdown_signal() {
+    signal::ctrl_c()
+        .await
+        .expect("Failed to install CTRL-C signal handler");
+}
+
+// handler function, returns a 200 OK response and empty body
+async fn health_check(_: Request<hyper::body::Incoming>) -> Result<Response<Full<Bytes>>, Infallible> {
+    Ok(Response::new(Full::new(Bytes::new())))
 }
 
 // main function
