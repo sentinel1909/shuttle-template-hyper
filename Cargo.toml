@@ -1,0 +1,12 @@
+[package]
+name = "shuttle-hyper-template"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+http-body-util = "0.1.2"
+hyper = { version = "1.4.1", features = [ "full" ] }
+hyper-util = { version = "0.1.7", features = [ "full" ] }
+shuttle-runtime = "0.47.0"
+tokio = { version = "1", features = [ "full" ] }
