@@ -1229,7 +1229,7 @@ dependencies = [
 
 [[package]]
 name = "shuttle-hyper-template"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "http-body-util",
  "hyper 1.4.1",
