@@ -6,6 +6,7 @@ use shuttle_runtime::Error;
 
 // main function
 #[shuttle_runtime::main]
-async fn shuttle_main() -> Result<HyperService, Error> {
+async fn main() -> Result<HyperService, Error> {
+    
     Ok(HyperService {})
 }
