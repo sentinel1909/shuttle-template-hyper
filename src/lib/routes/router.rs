@@ -13,10 +13,14 @@ type RouterResponse = Response<BoxBody<Bytes, Error>>;
 pub async fn router(req: Request<Incoming>) -> Result<RouterResponse, Error> {
     match (req.method(), req.uri().path()) {
         // health_check endpoint
-        (&Method::GET, "/health_check") => Ok(Response::new(empty())),
+        (&Method::GET, "/_health") => {
+            tracing::info!("Health check endpoint reached");
+            Ok(Response::new(empty()))
+        },
 
         // 404 Not Found; for any non-matching routes
         _ => {
+            tracing::info!("Not found handler reached");
             let mut not_found = Response::new(empty());
             *not_found.status_mut() = StatusCode::NOT_FOUND;
             Ok(not_found)

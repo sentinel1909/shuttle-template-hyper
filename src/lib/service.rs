@@ -47,7 +47,7 @@ impl Service for HyperService {
                 },
 
                 _ = &mut signal => {
-                    eprintln!("Graceful shtudown signal received...");
+                    eprintln!("Graceful shutdown signal received...");
                     break Ok(());
                 }
             }
