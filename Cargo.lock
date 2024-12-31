@@ -1540,7 +1540,7 @@ dependencies = [
 
 [[package]]
 name = "shuttle-hyper-template"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "http-body-util",
  "hyper 1.5.2",
