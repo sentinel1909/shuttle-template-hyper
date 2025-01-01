@@ -4,5 +4,5 @@ A raw Hyper server, using [Hyper](https://hyper.rs) and hosted on [Shuttle](http
 
 Routes are minimal:
 
-- `/health_check` returns a `200 OK` response with empty body
+- `/_health` returns a `200 OK` response with empty body
 - returns `404 Not Found` for any other route
