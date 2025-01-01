@@ -1,7 +1,7 @@
 # shuttle-hyper-template Cargo.toml definition
 [package]
 name = "shuttle-hyper-template"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2021"
 authors = ["Jeffery D. Mitchell", "<sentinel1909@jeff-mitchell.dev>"]
 description = "A template server, built with Hyper and Tokio"
