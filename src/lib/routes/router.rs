@@ -16,7 +16,7 @@ pub async fn router(req: Request<Incoming>) -> Result<RouterResponse, Error> {
         (&Method::GET, "/_health") => {
             tracing::info!("Health check endpoint reached");
             Ok(Response::new(empty()))
-        },
+        }
 
         // 404 Not Found; for any non-matching routes
         _ => {
