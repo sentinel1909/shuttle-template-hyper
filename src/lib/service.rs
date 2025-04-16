@@ -1,6 +1,7 @@
 // src/lib/service.rs
 
 // dependencies
+use crate::actors::PingMessage;
 use crate::routes::router;
 use crate::utilities::shutdown_signal;
 use hyper::server::conn::http1;
@@ -16,7 +17,7 @@ use tokio::sync::mpsc::Sender;
 // Customize this struct with things from `shuttle_main` needed in `bind`,
 // such as secrets or database connections
 pub struct HyperService {
-    pub ping_tx: Sender<()>,
+    pub ping_tx: Sender<PingMessage>,
 }
 
 #[shuttle_runtime::async_trait]

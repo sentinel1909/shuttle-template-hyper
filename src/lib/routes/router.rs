@@ -1,6 +1,7 @@
 // src/lib/routes/router.rs
 
 // dependencies
+use crate::actors::PingMessage;
 use crate::utilities::{empty, response_msg};
 use http_body_util::combinators::BoxBody;
 use hyper::body::{Bytes, Incoming};
@@ -11,7 +12,7 @@ use tokio::sync::mpsc::Sender;
 type RouterResponse = Response<BoxBody<Bytes, Error>>;
 
 // router function; routes incoming requests to send back the appropriate response
-pub async fn router(req: Request<Incoming>, ping_tx: Sender<()>) -> Result<RouterResponse, Error> {
+pub async fn router(req: Request<Incoming>, ping_tx: Sender<PingMessage>) -> Result<RouterResponse, Error> {
     match (req.method(), req.uri().path()) {
         // health_check endpoint
         (&Method::GET, "/_health") => {
@@ -23,7 +24,7 @@ pub async fn router(req: Request<Incoming>, ping_tx: Sender<()>) -> Result<Route
         (&Method::GET, "/ping") => {
             tracing::info!("Ping endpoint reached");
 
-            if let Err(e) = ping_tx.send(()).await {
+            if let Err(e) = ping_tx.send(PingMessage::Ping).await {
                 tracing::error!("Failed to send ping to actor: {}", e);
             }
 
