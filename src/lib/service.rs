@@ -11,10 +11,13 @@ use shuttle_runtime::Service;
 use std::net::SocketAddr;
 use std::pin::pin;
 use tokio::net::TcpListener;
+use tokio::sync::mpsc::Sender;
 
 // Customize this struct with things from `shuttle_main` needed in `bind`,
 // such as secrets or database connections
-pub struct HyperService {}
+pub struct HyperService {
+    pub ping_tx: Sender<()>,
+}
 
 #[shuttle_runtime::async_trait]
 impl Service for HyperService {
@@ -37,7 +40,11 @@ impl Service for HyperService {
             tokio::select! {
                 Ok((stream, _)) = listener.accept() => {
                     let io = TokioIo::new(stream);
-                    let conn = http.serve_connection(io, service_fn(router));
+                    let ping_tx_clone = self.ping_tx.clone();
+                    let conn = http.serve_connection(io, service_fn(move |req| {
+                        let tx = ping_tx_clone.clone();
+                        async move { router(req, tx).await }
+                    }));
                     let fut = graceful.watch(conn);
                     tokio::spawn(async move {
                         if let Err(e) = fut.await {

@@ -2,3 +2,4 @@
 
 mod health;
 mod helpers;
+mod ping;
