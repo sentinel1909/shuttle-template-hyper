@@ -5,4 +5,5 @@ A raw Hyper server, using [Hyper](https://hyper.rs) and hosted on [Shuttle](http
 Routes are minimal:
 
 - `/_health` returns a `200 OK` response with empty body
+- `/ping` invokes an actor which counts the number of pings and returns `Pong` as the response body
 - returns `404 Not Found` for any other route

@@ -3,6 +3,7 @@
 // dependencies
 use http_body_util::{
     Empty,
+    Full,
     {combinators::BoxBody, BodyExt},
 };
 use hyper::body::Bytes;
@@ -20,4 +21,9 @@ pub fn empty() -> BoxBody<Bytes, hyper::Error> {
     Empty::<Bytes>::new()
         .map_err(|never| match never {})
         .boxed()
+}
+
+// utility function to create a response body with any desired message
+pub fn response_msg(text: &'static str) -> BoxBody<Bytes, hyper::Error> {
+    Full::new(Bytes::from_static(text.as_bytes())).map_err(|never| match never {}).boxed()
 }

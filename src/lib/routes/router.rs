@@ -1,7 +1,7 @@
 // src/lib/routes/router.rs
 
 // dependencies
-use crate::utilities::empty;
+use crate::utilities::{empty, response_msg};
 use http_body_util::combinators::BoxBody;
 use hyper::body::{Bytes, Incoming};
 use hyper::{Error, Method, Request, Response, StatusCode};
@@ -27,7 +27,7 @@ pub async fn router(req: Request<Incoming>, ping_tx: Sender<()>) -> Result<Route
                 tracing::error!("Failed to send ping to actor: {}", e);
             }
 
-            Ok(Response::new(empty()))
+            Ok(Response::new(response_msg("Pong")))
         }
 
         // 404 Not Found; for any non-matching routes
