@@ -5,16 +5,28 @@ use crate::utilities::empty;
 use http_body_util::combinators::BoxBody;
 use hyper::body::{Bytes, Incoming};
 use hyper::{Error, Method, Request, Response, StatusCode};
+use tokio::sync::mpsc::Sender;
 
 // type alias for the response type
 type RouterResponse = Response<BoxBody<Bytes, Error>>;
 
-// router function; routes incomign requests to send back the appropriate response
-pub async fn router(req: Request<Incoming>) -> Result<RouterResponse, Error> {
+// router function; routes incoming requests to send back the appropriate response
+pub async fn router(req: Request<Incoming>, ping_tx: Sender<()>) -> Result<RouterResponse, Error> {
     match (req.method(), req.uri().path()) {
         // health_check endpoint
         (&Method::GET, "/_health") => {
             tracing::info!("Health check endpoint reached");
+            Ok(Response::new(empty()))
+        }
+
+        // ping endpoint
+        (&Method::GET, "/ping") => {
+            tracing::info!("Ping endpoint reached");
+
+            if let Err(e) = ping_tx.send(()).await {
+                tracing::error!("Failed to send ping to actor: {}", e);
+            }
+
             Ok(Response::new(empty()))
         }
 
