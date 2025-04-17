@@ -1,7 +1,7 @@
 # shuttle-hyper-template Cargo.toml definition
 [package]
 name = "shuttle-hyper-template"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 authors = ["Jeffery D. Mitchell", "<crusty-rustacean@jeff-mitchell.dev>"]
 description = "A template server, built with Hyper and Tokio"
@@ -23,10 +23,10 @@ path = "src/lib/lib.rs"
 # package dependences
 [dependencies]
 http-body-util = "0.1.3"
-hyper = { version = "1.6.0", features = [ "http1", "server" ] }
-hyper-util = { version = "0.1.11", features = [ "full" ] }
+hyper = { version = "1.6.0", features = ["http1", "server"] }
+hyper-util = { version = "0.1.11", features = ["full"] }
 shuttle-runtime = "0.53.0"
-tokio = { version = "1.44.2", features = [ "net" ] }
+tokio = { version = "1.44.2", features = ["net"] }
 tracing = "0.1.41"
 
 [dev-dependencies]

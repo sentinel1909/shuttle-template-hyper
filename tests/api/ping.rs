@@ -23,9 +23,8 @@ async fn ping_route_works() {
     // Assert
     assert_eq!(response.status(), 200);
 
-    let bytes = response.bytes().await.unwrap();
-    let body = String::from_utf8(bytes.to_vec()).unwrap();
+    let body_bytes = response.bytes().await.unwrap();
+    let body = String::from_utf8(body_bytes.to_vec()).unwrap();
 
     assert_eq!(body, "Pong");
-    
 }
