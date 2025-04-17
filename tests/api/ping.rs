@@ -3,9 +3,16 @@
 // dependencies
 use crate::helpers::start_test_server;
 use reqwest::Client;
+use serde::Deserialize;
+
+// struct type to represent a response body from the /ping endpoint
+#[derive(Deserialize    )]
+struct PingResponse {
+    msg: String,
+}
 
 #[tokio::test]
-async fn ping_route_works() {
+async fn ping_route_returns_200_ok() {
     // Arrange
     let addr = start_test_server().await;
     let client = Client::builder()
@@ -23,8 +30,11 @@ async fn ping_route_works() {
     // Assert
     assert_eq!(response.status(), 200);
 
-    let body_bytes = response.bytes().await.unwrap();
-    let body = String::from_utf8(body_bytes.to_vec()).unwrap();
+    let ping_response: PingResponse = response
+        .json()
+        .await
+        .expect("Failed to parse JSON from /count");
 
-    assert_eq!(body, "Pong");
+    // Assert: count is 3
+    assert_eq!(ping_response.msg, "Pong");
 }

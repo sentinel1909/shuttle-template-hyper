@@ -41,9 +41,9 @@ impl Service for HyperService {
             tokio::select! {
                 Ok((stream, _)) = listener.accept() => {
                     let io = TokioIo::new(stream);
-                    let ping_tx_clone = self.ping_tx.clone();
+                    let tx = self.ping_tx.clone();
                     let conn = http.serve_connection(io, service_fn(move |req| {
-                        let tx = ping_tx_clone.clone();
+                        let tx = tx.clone();
                         async move { router(req, tx).await }
                     }));
                     let fut = graceful.watch(conn);

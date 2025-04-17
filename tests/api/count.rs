@@ -3,9 +3,15 @@
 // dependencies
 use crate::helpers::start_test_server;
 use reqwest::Client;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct CountResponse {
+    count: usize,
+}
 
 #[tokio::test]
-async fn count_route_works() {
+async fn count_route_returns_200_ok() {
     // Arrange
     let addr = start_test_server().await;
     let client = Client::builder()
@@ -33,9 +39,11 @@ async fn count_route_works() {
 
     assert_eq!(response.status(), 200);
 
-    let body_bytes = response.bytes().await.unwrap();
-    let body_str = std::str::from_utf8(&body_bytes).expect("Body not valid UTF-8");
+    let count_response: CountResponse = response
+        .json()
+        .await
+        .expect("Failed to parse JSON from /count");
 
     // Assert: count is 3
-    assert_eq!(body_str.trim(), "3");
+    assert_eq!(count_response.count, 3);
 }

@@ -2,15 +2,29 @@
 
 // dependencies
 use crate::actors::PingMessage;
-use crate::utilities::{empty, response_msg};
+use crate::utilities::{empty, json_response_msg, response_msg};
 use http_body_util::combinators::BoxBody;
 use hyper::body::{Bytes, Incoming};
+use hyper::header::{HeaderValue, CONTENT_TYPE};
 use hyper::{Error, Method, Request, Response, StatusCode};
+use serde::Serialize;
 use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
 
 // type alias for the response type
 type RouterResponse = Response<BoxBody<Bytes, Error>>;
+
+// struct type to represent a response body from the /count endpoint
+#[derive(Serialize)]
+struct CountResponse {
+    count: usize,
+}
+
+// struct type to represent a response body from the /ping endpoint
+#[derive(Serialize)]
+struct PingResponse {
+    msg: String,
+}
 
 // router function; routes incoming requests to send back the appropriate response
 pub async fn router(
@@ -24,6 +38,7 @@ pub async fn router(
             Ok(Response::new(empty()))
         }
 
+        // count endpoint
         (&Method::GET, "/count") => {
             tracing::info!("Count endpoint reached");
 
@@ -46,7 +61,12 @@ pub async fn router(
                 }
             };
 
-            Ok(Response::new(response_msg(count.to_string())))
+            let mut response = Response::new(json_response_msg(CountResponse { count }));
+            response.headers_mut().insert(
+                CONTENT_TYPE, HeaderValue::from_static("application/json"),
+            );
+
+            Ok(response)
         }
 
         // ping endpoint
@@ -57,7 +77,13 @@ pub async fn router(
                 tracing::error!("Failed to send ping to actor: {}", e);
             }
 
-            Ok(Response::new(response_msg("Pong")))
+            let mut response = Response::new(json_response_msg(PingResponse { msg: "Pong".to_string() }));
+            response.headers_mut().insert(
+                CONTENT_TYPE, HeaderValue::from_static("application/json"),
+            );
+
+            Ok(response)
+
         }
 
         // 404 Not Found; for any non-matching routes
