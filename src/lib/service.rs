@@ -17,7 +17,7 @@ use tokio::sync::mpsc::Sender;
 // Customize this struct with things from `shuttle_main` needed in `bind`,
 // such as secrets or database connections
 pub struct HyperService {
-    pub ping_tx: Sender<PingMessage>,
+    pub tx: Sender<PingMessage>,
 }
 
 #[shuttle_runtime::async_trait]
@@ -41,7 +41,7 @@ impl Service for HyperService {
             tokio::select! {
                 Ok((stream, _)) = listener.accept() => {
                     let io = TokioIo::new(stream);
-                    let tx = self.ping_tx.clone();
+                    let tx = self.tx.clone();
                     let conn = http.serve_connection(io, service_fn(move |req| {
                         let tx = tx.clone();
                         async move { router(req, tx).await }

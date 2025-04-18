@@ -9,8 +9,8 @@ use shuttle_runtime::Error as HyperServiceError;
 #[shuttle_runtime::main]
 async fn main() -> Result<HyperService, HyperServiceError> {
     // start up the ping counter actor
-    let (ping_tx, _handle) = PingCounterActor::start();
+    let (tx, _handle) = PingCounterActor::start();
 
     // start up the service
-    Ok(HyperService { ping_tx })
+    Ok(HyperService { tx })
 }

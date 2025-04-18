@@ -1,17 +1,13 @@
 // tests/api/health.rs
 
 // dependencies
-use crate::helpers::start_test_server;
-use reqwest::Client;
+use crate::helpers::{get_test_client, start_test_server};
 
 #[tokio::test]
 async fn health_route_returns_200_ok() {
     // Arrange
     let addr = start_test_server().await;
-    let client = Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .unwrap();
+    let client = get_test_client();
 
     // Act
     let response = client

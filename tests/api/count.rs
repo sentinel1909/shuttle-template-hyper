@@ -1,8 +1,7 @@
 // tests/api/count.rs
 
 // dependencies
-use crate::helpers::start_test_server;
-use reqwest::Client;
+use crate::helpers::{get_test_client, start_test_server};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -11,13 +10,10 @@ struct CountResponse {
 }
 
 #[tokio::test]
-async fn count_route_returns_200_ok() {
+async fn count_route_returns_200_ok_and_correct_ping_count() {
     // Arrange
     let addr = start_test_server().await;
-    let client = Client::builder()
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .unwrap();
+    let client = get_test_client();
 
     // Act: Send 3 ping requests
     for _ in 0..3 {
