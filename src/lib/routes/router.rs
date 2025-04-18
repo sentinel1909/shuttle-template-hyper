@@ -2,10 +2,10 @@
 
 // dependencies
 use crate::actors::PingMessage;
-use crate::utilities::{empty, json_response_msg, response_msg};
+use crate::errors::ApiError;
+use crate::utilities::{empty, json_response_msg, set_content_type_json};
 use http_body_util::combinators::BoxBody;
 use hyper::body::{Bytes, Incoming};
-use hyper::header::{HeaderValue, CONTENT_TYPE};
 use hyper::{Error, Method, Request, Response, StatusCode};
 use serde::Serialize;
 use tokio::sync::mpsc::Sender;
@@ -30,7 +30,7 @@ struct PingResponse {
 pub async fn router(
     req: Request<Incoming>,
     ping_tx: Sender<PingMessage>,
-) -> Result<RouterResponse, Error> {
+) -> Result<RouterResponse, ApiError> {
     match (req.method(), req.uri().path()) {
         // health_check endpoint
         (&Method::GET, "/_health") => {
@@ -44,27 +44,16 @@ pub async fn router(
 
             let (tx, rx) = oneshot::channel();
 
-            if let Err(e) = ping_tx.send(PingMessage::GetCount(tx)).await {
-                tracing::error!("Failed to send GetCount to actor: {e}");
-                let mut resp = Response::new(response_msg("Actor unavailable"));
-                *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
-                return Ok(resp);
-            }
+            ping_tx
+                .send(PingMessage::GetCount(tx))
+                .await
+                .map_err(|_| ApiError::ActorUnavailable)?;
 
-            let count = match rx.await {
-                Ok(count) => count,
-                Err(e) => {
-                    tracing::error!("Actor didn't reply: {e}");
-                    let mut resp = Response::new(response_msg("Actor did not respond"));
-                    *resp.status_mut() = StatusCode::INTERNAL_SERVER_ERROR;
-                    return Ok(resp);
-                }
-            };
+            let count = rx.await?;
 
             let mut response = Response::new(json_response_msg(CountResponse { count }));
-            response.headers_mut().insert(
-                CONTENT_TYPE, HeaderValue::from_static("application/json"),
-            );
+
+            set_content_type_json(&mut response);
 
             Ok(response)
         }
@@ -73,17 +62,17 @@ pub async fn router(
         (&Method::GET, "/ping") => {
             tracing::info!("Ping endpoint reached");
 
-            if let Err(e) = ping_tx.send(PingMessage::Ping).await {
-                tracing::error!("Failed to send ping to actor: {}", e);
-            }
+            ping_tx
+                .send(PingMessage::Ping)
+                .await
+                .map_err(|_| ApiError::ActorUnavailable)?;
 
-            let mut response = Response::new(json_response_msg(PingResponse { msg: "Pong".to_string() }));
-            response.headers_mut().insert(
-                CONTENT_TYPE, HeaderValue::from_static("application/json"),
-            );
+            let mut response = Response::new(json_response_msg(PingResponse {
+                msg: "Pong".to_string(),
+            }));
+            set_content_type_json(&mut response);
 
             Ok(response)
-
         }
 
         // 404 Not Found; for any non-matching routes

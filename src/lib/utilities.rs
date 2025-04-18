@@ -6,7 +6,8 @@ use http_body_util::{
     {combinators::BoxBody, BodyExt},
 };
 use hyper::body::Bytes;
-use hyper::Error;
+use hyper::header::{HeaderValue, CONTENT_TYPE};
+use hyper::{Error, Response};
 use serde::Serialize;
 use tokio::signal;
 
@@ -24,11 +25,9 @@ pub fn empty() -> BoxBody<Bytes, Error> {
         .boxed()
 }
 
-// utility function to create a response body with any desired message
-pub fn response_msg<T: Into<Bytes>>(text: T) -> BoxBody<Bytes, Error> {
-    Full::new(text.into())
-        .map_err(|never| match never {})
-        .boxed()
+pub fn set_content_type_json<T>(resp: &mut Response<T>) {
+    resp.headers_mut()
+        .insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 }
 
 // utility function to create a JSON response body

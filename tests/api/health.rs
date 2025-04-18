@@ -5,7 +5,7 @@ use crate::helpers::start_test_server;
 use reqwest::Client;
 
 #[tokio::test]
-async fn health_route_works() {
+async fn health_route_returns_200_ok() {
     // Arrange
     let addr = start_test_server().await;
     let client = Client::builder()
