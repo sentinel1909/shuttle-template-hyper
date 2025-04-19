@@ -1,7 +1,7 @@
 // tests/api/ping.rs
 
 // dependencies
-use crate::helpers::{get_test_client, start_test_server, start_test_server_with_sender};
+use crate::helpers::{get_test_client, start_test_server, start_test_server_with_state};
 use serde::Deserialize;
 use shuttle_hyper_template_lib::actors::PingMessage;
 use shuttle_hyper_template_lib::init::build_route_table;
@@ -44,14 +44,14 @@ async fn ping_route_returns_200_ok() {
 async fn ping_route_returns_502_when_actor_dropped() {
     // Arrange
     let (tx, rx) = mpsc::channel::<PingMessage>(1);
-    drop(rx); 
+    drop(rx);
 
     let state = AppState {
         routes: Arc::new(build_route_table()),
         ping_tx: tx,
-    }; 
+    };
 
-    let addr = start_test_server_with_sender(state).await;
+    let addr = start_test_server_with_state(state).await;
     let client = get_test_client();
 
     // Act

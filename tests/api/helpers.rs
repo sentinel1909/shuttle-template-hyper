@@ -5,15 +5,15 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper_util::rt::TokioIo;
 use reqwest::Client;
-use shuttle_hyper_template_lib::{AppState, PingCounterActor};
 use shuttle_hyper_template_lib::init::build_route_table;
 use shuttle_hyper_template_lib::routes::router;
+use shuttle_hyper_template_lib::{AppState, PingCounterActor};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
 // start a test server, with a sender, and return the address it is listening on
-pub async fn start_test_server_with_sender(state: AppState) -> SocketAddr {
+pub async fn start_test_server_with_state(state: AppState) -> SocketAddr {
     let address = "127.0.0.1";
     let port: u16 = 0;
     let socket = format!("{}:{}", address, port);
@@ -63,7 +63,7 @@ pub async fn start_test_server() -> SocketAddr {
         ping_tx: tx,
     };
 
-    start_test_server_with_sender(state).await
+    start_test_server_with_state(state).await
 }
 
 // helper function to build a test client

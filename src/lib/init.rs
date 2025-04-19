@@ -1,9 +1,9 @@
 // src/lib/init.rs
 
 // dependencies
-use crate::routes::{handle_count, handle_health_check, handle_ping};
 use crate::routes::router::HandlerFn;
 use crate::routes::router_table::RouteTable;
+use crate::routes::{handle_count, handle_health_check, handle_ping};
 use hyper::Method;
 
 pub fn build_route_table() -> RouteTable {

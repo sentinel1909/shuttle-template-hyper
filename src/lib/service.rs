@@ -27,7 +27,7 @@ pub struct HyperService {
 impl Service for HyperService {
     async fn bind(self, addr: SocketAddr) -> Result<(), shuttle_runtime::Error> {
         // create the routing table and routes
-        let table = build_route_table(); 
+        let table = build_route_table();
 
         // create the application state
         let state = AppState {
@@ -53,7 +53,7 @@ impl Service for HyperService {
             tokio::select! {
                 Ok((stream, _)) = listener.accept() => {
                     let io = TokioIo::new(stream);
-                    let state = state.clone(); 
+                    let state = state.clone();
                     let conn = http.serve_connection(io, service_fn(move |req| {
                         let state = state.clone();
                         async move { router(req, state).await }

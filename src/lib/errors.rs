@@ -8,7 +8,7 @@ use hyper::{
     header::{HeaderValue, CONTENT_TYPE},
     Error, Response, StatusCode,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 // enum type to represent ApiError variants
@@ -40,9 +40,9 @@ pub enum ApiError {
 }
 
 // struct type to represent an error response
-#[derive(Serialize)]
-struct ErrorResponse {
-    error: String,
+#[derive(Deserialize, Serialize)]
+pub struct ErrorResponse {
+    pub error: String,
 }
 
 // methods for the ErrorResponse type
@@ -61,12 +61,11 @@ impl ApiError {
     }
 
     pub fn to_response(&self) -> Response<BoxBody<Bytes, Error>> {
-        let payload = serde_json::to_vec(&ErrorResponse {
-            error: self.to_string(), // uses #[error(...)]
-        })
-        .unwrap_or_else(|_| b"{\"error\":\"serialization failure\"}".to_vec());
+        let error_payload = ErrorResponse {
+            error: self.to_string(),
+        };
 
-        let body = json_response_msg(payload);
+        let body = json_response_msg(error_payload);
         let mut response = Response::new(body);
 
         *response.status_mut() = self.status_code();
