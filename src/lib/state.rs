@@ -1,7 +1,7 @@
 // src/lib/state.rs
 
 // dependencies
-use crate::actors::PingMessage;
+use crate::actors::ping::PingMessage;
 use crate::routes::router_table::RouteTable;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;

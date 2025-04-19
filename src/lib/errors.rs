@@ -1,13 +1,10 @@
 // src/lib/errors.rs
 
 // dependencies
-use crate::utilities::json_response_msg;
+use crate::utilities::{json_response_msg, set_content_type_json};
 use http_body_util::combinators::BoxBody;
 use hyper::body::Bytes;
-use hyper::{
-    header::{HeaderValue, CONTENT_TYPE},
-    Error, Response, StatusCode,
-};
+use hyper::{Error, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -65,14 +62,10 @@ impl ApiError {
             error: self.to_string(),
         };
 
-        let body = json_response_msg(error_payload);
-        let mut response = Response::new(body);
+        let mut error_response = Response::new(json_response_msg(error_payload));
+        *error_response.status_mut() = self.status_code();
+        set_content_type_json(&mut error_response);
 
-        *response.status_mut() = self.status_code();
-        response
-            .headers_mut()
-            .insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
-
-        response
+        error_response
     }
 }

@@ -25,8 +25,9 @@ pub fn empty() -> BoxBody<Bytes, Error> {
         .boxed()
 }
 
-pub fn set_content_type_json<T>(resp: &mut Response<T>) {
-    resp.headers_mut()
+pub fn set_content_type_json<T>(response: &mut Response<T>) {
+    response
+        .headers_mut()
         .insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
 }
 

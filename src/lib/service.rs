@@ -1,7 +1,7 @@
 // src/lib/service.rs
 
 // dependencies
-use crate::actors::PingMessage;
+use crate::actors::ping::PingMessage;
 use crate::init::build_route_table;
 use crate::routes::router;
 use crate::state::AppState;
@@ -10,22 +10,22 @@ use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper_util::rt::TokioIo;
 use hyper_util::server::graceful::GracefulShutdown;
-use shuttle_runtime::Service;
+use shuttle_runtime::{Error, Service};
 use std::net::SocketAddr;
 use std::pin::pin;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc::Sender;
 
-// Customize this struct with things from `shuttle_main` needed in `bind`,
-// such as secrets or database connections
+// struct type to represent our service that runs on Shuttle
 pub struct HyperService {
     pub tx: Sender<PingMessage>,
 }
 
+// implement the Service trait for the HyperService type
 #[shuttle_runtime::async_trait]
 impl Service for HyperService {
-    async fn bind(self, addr: SocketAddr) -> Result<(), shuttle_runtime::Error> {
+    async fn bind(self, addr: SocketAddr) -> Result<(), Error> {
         // create the routing table and routes
         let table = build_route_table();
 

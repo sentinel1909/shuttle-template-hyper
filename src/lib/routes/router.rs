@@ -1,7 +1,7 @@
 // src/lib/routes/router.rs
 
 // dependencies
-use crate::actors::PingMessage;
+use crate::actors::ping::PingMessage;
 use crate::errors::ApiError;
 use crate::state::AppState;
 use crate::utilities::{empty, json_response_msg, set_content_type_json};
@@ -31,7 +31,7 @@ struct PingResponse {
 }
 
 // count handler function
-pub fn handle_count(_req: Request<Incoming>, state: AppState) -> HandlerResult {
+pub fn handle_count(_request: Request<Incoming>, state: AppState) -> HandlerResult {
     Box::pin(async move {
         tracing::info!("Count endpoint reached");
 
@@ -80,17 +80,19 @@ pub fn handle_ping(_req: Request<Incoming>, state: AppState) -> HandlerResult {
 }
 
 // router function; routes incoming requests to send back the appropriate response
-pub async fn router(req: Request<Incoming>, state: AppState) -> Result<RouterResponse, ApiError> {
-    let method = req.method().clone();
-    let path = req.uri().path();
+pub async fn router(
+    request: Request<Incoming>,
+    state: AppState,
+) -> Result<RouterResponse, ApiError> {
+    let method = request.method();
+    let path = request.uri().path();
     match state.routes.at(&method, path) {
-        Some((handler_fn, _params)) => handler_fn(req, state).await,
-
+        Some((handler_fn, _params)) => handler_fn(request, state).await,
         None => {
             tracing::info!("Not found handler reached");
-            let mut not_found = Response::new(empty());
-            *not_found.status_mut() = StatusCode::NOT_FOUND;
-            Ok(not_found)
+            let mut not_found_response = Response::new(empty());
+            *not_found_response.status_mut() = StatusCode::NOT_FOUND;
+            Ok(not_found_response)
         }
     }
 }

@@ -13,7 +13,5 @@ pub fn build_route_table() -> RouteTable {
     table.insert(Method::GET, "/ping", handle_ping as HandlerFn);
     table.insert(Method::GET, "/count", handle_count as HandlerFn);
 
-    // add more routes here as the app grows
-
     table
 }
