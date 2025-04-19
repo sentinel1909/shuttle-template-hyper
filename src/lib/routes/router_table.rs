@@ -1,21 +1,15 @@
 // src/lib/routes/router_table.rs
 
 // dependencies
+use crate::routes::router::HandlerFn;
 use hyper::Method;
 use matchit::{Params, Router as MatchitRouter};
 use std::collections::HashMap;
 
-// enum type to represent route handlers
-#[derive(Debug, Clone, Copy)]
-pub enum RouteHandler {
-    HealthCheck,
-    Ping,
-    Count,
-}
-
 // struct type to store route definitions by method and path
+#[derive(Debug)]
 pub struct RouteTable {
-    routes: HashMap<Method, MatchitRouter<RouteHandler>>,
+    routes: HashMap<Method, MatchitRouter<HandlerFn>>,
 }
 
 // methods for the RouterTable type
@@ -30,7 +24,7 @@ impl RouteTable {
         &mut self,
         method: Method,
         path: &'static str,
-        handler: RouteHandler, // we'll link this to real handler funcs later
+        handler: HandlerFn, // we'll link this to real handler funcs later
     ) {
         self.routes
             .entry(method)
@@ -39,11 +33,7 @@ impl RouteTable {
             .expect("failed to insert route");
     }
 
-    pub fn at<'a>(
-        &'a self,
-        method: &Method,
-        path: &'a str,
-    ) -> Option<(RouteHandler, Params<'a, 'a>)> {
+    pub fn at<'a>(&'a self, method: &Method, path: &'a str) -> Option<(HandlerFn, Params<'a, 'a>)> {
         self.routes
             .get(method)
             .and_then(|router| router.at(path).ok().map(|m| (*m.value, m.params)))

@@ -1,19 +1,19 @@
 // tests/api/helpers.rs
 
 // dependencies
-use shuttle_hyper_template_lib::actors::PingMessage;
 use hyper::server::conn::http1;
 use hyper::service::service_fn;
 use hyper_util::rt::TokioIo;
 use reqwest::Client;
+use shuttle_hyper_template_lib::{AppState, PingCounterActor};
+use shuttle_hyper_template_lib::init::build_route_table;
 use shuttle_hyper_template_lib::routes::router;
-use shuttle_hyper_template_lib::PingCounterActor;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::mpsc::Sender;
 
 // start a test server, with a sender, and return the address it is listening on
-pub async fn start_test_server_with_sender(tx: Sender<PingMessage>) -> SocketAddr {
+pub async fn start_test_server_with_sender(state: AppState) -> SocketAddr {
     let address = "127.0.0.1";
     let port: u16 = 0;
     let socket = format!("{}:{}", address, port);
@@ -23,7 +23,7 @@ pub async fn start_test_server_with_sender(tx: Sender<PingMessage>) -> SocketAdd
     let addr = listener
         .local_addr()
         .expect("Unable to obtain the address the test server is using");
-    
+
     tokio::spawn(async move {
         loop {
             let (stream, _) = listener
@@ -31,12 +31,12 @@ pub async fn start_test_server_with_sender(tx: Sender<PingMessage>) -> SocketAdd
                 .await
                 .expect("Unable to listen for an incoming stream.");
             let io = TokioIo::new(stream);
-            let tx = tx.clone();
+            let state = state.clone();
             tokio::spawn(async move {
                 let svc = service_fn(move |req| {
-                    let tx = tx.clone();
+                    let state = state.clone();
                     async move {
-                        match router(req, tx).await {
+                        match router(req, state).await {
                             Ok(resp) => Ok::<_, hyper::Error>(resp),
                             Err(api_err) => Ok(api_err.to_response()),
                         }
@@ -57,7 +57,13 @@ pub async fn start_test_server_with_sender(tx: Sender<PingMessage>) -> SocketAdd
 // start a server
 pub async fn start_test_server() -> SocketAddr {
     let (tx, _handle) = PingCounterActor::start();
-    start_test_server_with_sender(tx).await
+
+    let state = AppState {
+        routes: Arc::new(build_route_table()),
+        ping_tx: tx,
+    };
+
+    start_test_server_with_sender(state).await
 }
 
 // helper function to build a test client
