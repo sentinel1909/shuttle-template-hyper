@@ -2,14 +2,15 @@
 
 // dependencies
 use crate::state::AppState;
-use crate::types::HandlerResult;
+use crate::types::{HandlerResult, SvcReq, SvcResp};
 use crate::utilities::empty;
-use hyper::{Request, Response, body::Incoming};
+use hyper::Response;
 
 // health check handler function
-pub fn handle_health_check(_req: Request<Incoming>, _state: AppState) -> HandlerResult {
+pub fn handle_health_check(_request: SvcReq, _state: AppState) -> HandlerResult {
     Box::pin(async move {
         tracing::info!("Health check endpoint reached");
-        Ok(Response::new(empty()))
+        let response: SvcResp = Response::new(empty());
+        Ok(response)
     })
 }

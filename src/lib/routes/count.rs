@@ -4,9 +4,9 @@
 use crate::actors::ping::PingMessage;
 use crate::errors::ApiError;
 use crate::state::AppState;
-use crate::types::HandlerResult;
+use crate::types::{HandlerResult, SvcReq, SvcResp};
 use crate::utilities::{json_response_msg, set_content_type_json};
-use hyper::{Request, Response, body::Incoming};
+use hyper::Response;
 use serde::Serialize;
 use tokio::sync::oneshot;
 
@@ -17,7 +17,7 @@ struct CountResponse {
 }
 
 // count handler function
-pub fn handle_count(_request: Request<Incoming>, state: AppState) -> HandlerResult {
+pub fn handle_count(_request: SvcReq, state: AppState) -> HandlerResult {
     Box::pin(async move {
         tracing::info!("Count endpoint reached");
 
@@ -30,7 +30,7 @@ pub fn handle_count(_request: Request<Incoming>, state: AppState) -> HandlerResu
 
         let count = rx.await?;
 
-        let mut response = Response::new(json_response_msg(CountResponse { count }));
+        let mut response: SvcResp = Response::new(json_response_msg(CountResponse { count }));
         set_content_type_json(&mut response);
 
         Ok(response)
