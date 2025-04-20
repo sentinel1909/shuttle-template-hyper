@@ -1,11 +1,11 @@
 // src/lib/errors.rs
 
 // dependencies
-use crate::utilities::{json_response_msg, set_content_type_json};
-use http_body_util::combinators::BoxBody;
+use crate::types::{ErrorResponse, SvcResp};
+use crate::utilities::set_content_type_json;
+use http_body_util::{BodyExt, Full};
 use hyper::body::Bytes;
-use hyper::{Error, Response, StatusCode};
-use serde::{Deserialize, Serialize};
+use hyper::{Response, StatusCode};
 use thiserror::Error;
 
 // enum type to represent ApiError variants
@@ -36,12 +36,6 @@ pub enum ApiError {
     ActorRecv(#[from] tokio::sync::oneshot::error::RecvError),
 }
 
-// struct type to represent an error response
-#[derive(Deserialize, Serialize)]
-pub struct ErrorResponse {
-    pub error: String,
-}
-
 // methods for the ErrorResponse type
 impl ApiError {
     pub fn status_code(&self) -> StatusCode {
@@ -57,12 +51,25 @@ impl ApiError {
         }
     }
 
-    pub fn to_response(&self) -> Response<BoxBody<Bytes, Error>> {
+    pub fn to_response(&self) -> SvcResp {
         let error_payload = ErrorResponse {
+            msg: "error",
             error: self.to_string(),
         };
 
-        let mut error_response = Response::new(json_response_msg(error_payload));
+        let json = serde_json::to_vec(&error_payload).unwrap_or_else(|e| {
+            let fallback = format!(
+                r#"{{"msg":"error","error":"Failed to serialize error: {}"}}"#,
+                e
+            );
+            fallback.into_bytes()
+        });
+
+        let body = Full::new(Bytes::from(json))
+            .map_err(|never| match never {})
+            .boxed();
+
+        let mut error_response = Response::new(body);
         *error_response.status_mut() = self.status_code();
         set_content_type_json(&mut error_response);
 

@@ -10,10 +10,10 @@ use shuttle_hyper_template_lib::state::AppState;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
-// struct type to represent a response body from the /ping endpoint
 #[derive(Deserialize)]
-struct PingResponse {
+struct TestResponse<T> {
     msg: String,
+    content: T,
 }
 
 #[tokio::test]
@@ -32,13 +32,14 @@ async fn ping_route_returns_200_ok() {
     // Assert
     assert_eq!(response.status(), 200);
 
-    let ping_response: PingResponse = response
+    let ping_response: TestResponse<String> = response
         .json()
         .await
         .expect("Failed to parse JSON from /count");
 
     // Assert: count is 3
-    assert_eq!(ping_response.msg, "Pong");
+    assert_eq!(ping_response.msg, "success");
+    assert_eq!(ping_response.content, "Pong");
 }
 
 #[tokio::test]

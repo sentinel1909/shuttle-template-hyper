@@ -10,9 +10,16 @@ use shuttle_hyper_template_lib::state::AppState;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
-#[derive(Debug, Deserialize)]
-struct CountResponse {
-    count: usize,
+#[derive(Deserialize)]
+struct TestResponse<T> {
+    msg: String,
+    content: T,
+}
+
+#[derive(Deserialize)]
+struct TestError {
+    msg: String,
+    error: String,
 }
 
 #[tokio::test]
@@ -39,15 +46,13 @@ async fn count_route_returns_200_ok_and_correct_ping_count() {
         .await
         .expect("Failed to execute request");
 
+    // Assert
     assert_eq!(response.status(), 200);
 
-    let count_response: CountResponse = response
-        .json()
-        .await
-        .expect("Failed to parse JSON from /count");
+    let body: TestResponse<usize> = response.json().await.expect("Failed to parse JSON");
 
-    // Assert: count is 3
-    assert_eq!(count_response.count, 3);
+    assert_eq!(body.msg, "success");
+    assert_eq!(body.content, 3);
 }
 
 #[tokio::test]
@@ -86,18 +91,19 @@ async fn count_route_returns_500_when_actor_does_not_respond() {
         .await
         .expect("Request to /count failed");
 
-    // Assert
     let status = response.status();
-    let bytes = response.bytes().await.expect("Failed to read body");
 
-    let json: serde_json::Value = serde_json::from_slice(&bytes).expect("Expected valid JSON");
+    let body: TestError = response
+        .json()
+        .await
+        .expect("Failed to parse JSON from /count");
 
+    // Assert
     assert_eq!(status, 500);
-    let error_text = json["error"]
-        .as_str()
-        .expect("error field should be a string");
+    assert_eq!(body.msg, "error");
     assert!(
-        error_text.contains("Actor channel failed"),
-        "Unexpected error message: {error_text}"
+        body.error.contains("Actor channel failed"),
+        "Unexpected error message: {}",
+        body.error
     );
 }

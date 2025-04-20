@@ -19,9 +19,9 @@ pub fn handle_metrics(_request: SvcReq, state: AppState) -> HandlerResult {
             .await
             .map_err(|_| ApiError::ActorUnavailable)?;
 
-        let data = rx.await.map_err(|_| ApiError::ActorFailed)?;
+        let response_msg = rx.await.map_err(|_| ApiError::ActorFailed)?;
 
-        let mut response: SvcResp = Response::new(json_response_msg(data));
+        let mut response: SvcResp = Response::new(json_response_msg(response_msg));
         set_content_type_json(&mut response);
 
         Ok(response)

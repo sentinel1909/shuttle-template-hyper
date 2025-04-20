@@ -8,14 +8,7 @@ use crate::state::AppState;
 use crate::types::{HandlerResult, SvcReq, SvcResp};
 use crate::utilities::{json_response_msg, set_content_type_json};
 use hyper::Response;
-use serde::Serialize;
 use tokio::sync::oneshot;
-
-// struct type to represent a response body from the /ping endpoint
-#[derive(Serialize)]
-struct PingResponse {
-    msg: String,
-}
 
 // ping handler function
 pub fn handle_ping(_request: SvcReq, state: AppState) -> HandlerResult {
@@ -41,9 +34,8 @@ pub fn handle_ping(_request: SvcReq, state: AppState) -> HandlerResult {
 
         rx.await.map_err(|_| ApiError::ActorFailed)?;
 
-        let mut response: SvcResp = Response::new(json_response_msg(PingResponse {
-            msg: "Pong".to_string(),
-        }));
+        let response_msg = "Pong";
+        let mut response: SvcResp = Response::new(json_response_msg(response_msg));
         set_content_type_json(&mut response);
 
         Ok(response)

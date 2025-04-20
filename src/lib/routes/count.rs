@@ -7,14 +7,7 @@ use crate::state::AppState;
 use crate::types::{HandlerResult, SvcReq, SvcResp};
 use crate::utilities::{json_response_msg, set_content_type_json};
 use hyper::Response;
-use serde::Serialize;
 use tokio::sync::oneshot;
-
-// struct type to represent a response body from the /count endpoint
-#[derive(Serialize)]
-struct CountResponse {
-    count: usize,
-}
 
 // count handler function
 pub fn handle_count(_request: SvcReq, state: AppState) -> HandlerResult {
@@ -30,7 +23,7 @@ pub fn handle_count(_request: SvcReq, state: AppState) -> HandlerResult {
 
         let count = rx.await?;
 
-        let mut response: SvcResp = Response::new(json_response_msg(CountResponse { count }));
+        let mut response: SvcResp = Response::new(json_response_msg(count));
         set_content_type_json(&mut response);
 
         Ok(response)

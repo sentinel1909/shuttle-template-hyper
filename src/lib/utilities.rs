@@ -1,6 +1,7 @@
 // src/lib/utilities.rs
 
 // dependencies
+use crate::types::JsonResponse;
 use http_body_util::{
     Empty, Full,
     {BodyExt, combinators::BoxBody},
@@ -34,8 +35,13 @@ pub fn set_content_type_json<T>(response: &mut Response<T>) {
 
 // utility function to create a JSON response body
 pub fn json_response_msg<T: Serialize>(value: T) -> BoxBody<Bytes, Error> {
-    let json = serde_json::to_vec(&value).unwrap_or_else(|e| {
-        let fallback = format!(r#"{{"error":"Failed to serialize JSON: {}"}}"#, e);
+    let wrapper = JsonResponse {
+        msg: "success",
+        content: value,
+    };
+
+    let json = serde_json::to_vec(&wrapper).unwrap_or_else(|e| {
+        let fallback = format!(r#"{{"msg":"error","error":"{}"}}"#, e);
         fallback.into_bytes()
     });
 
@@ -49,6 +55,7 @@ pub fn json_response_msg<T: Serialize>(value: T) -> BoxBody<Bytes, Error> {
 pub fn parse_query_string(query: &str) -> HashMap<String, String> {
     query
         .split('&')
+        .filter(|pair| !pair.is_empty())
         .filter_map(|pair| {
             let mut parts = pair.splitn(2, '=');
             let key = parts.next()?;
@@ -56,4 +63,15 @@ pub fn parse_query_string(query: &str) -> HashMap<String, String> {
             Some((key.to_string(), value.to_string()))
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_query_returns_empty_map() {
+        let result = parse_query_string("");
+        assert!(result.is_empty());
+    }
 }

@@ -11,9 +11,9 @@ pub fn handle_echo(request: SvcReq, _state: AppState) -> HandlerResult {
     Box::pin(async move {
         tracing::info!("Echo endpoint reached");
         let query = request.uri().query().unwrap_or("");
-        let parsed = parse_query_string(query);
+        let response_msg = parse_query_string(query);
 
-        let mut response: SvcResp = Response::new(json_response_msg(parsed));
+        let mut response: SvcResp = Response::new(json_response_msg(response_msg));
         set_content_type_json(&mut response);
 
         Ok(response)
