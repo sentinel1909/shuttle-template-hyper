@@ -7,6 +7,7 @@ pub mod init;
 pub mod routes;
 pub mod service;
 pub mod state;
+pub mod types;
 pub mod utilities;
 
 // re-exports

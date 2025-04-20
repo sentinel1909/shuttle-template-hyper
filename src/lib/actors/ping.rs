@@ -20,7 +20,7 @@ pub struct PingCounterActor {
 
 impl PingCounterActor {
     pub fn start_ping_actor() -> (Sender<PingMessage>, JoinHandle<()>) {
-        let (tx, rx) = mpsc::channel(32);
+        let (tx, rx) = mpsc::channel::<PingMessage>(32);
 
         let ping_actor = PingCounterActor { rx, count: 0 };
 
@@ -44,6 +44,6 @@ impl PingCounterActor {
             }
         }
 
-        tracing::info!("PingCounterActor shutting donw.");
+        tracing::info!("PingCounterActor shutting down.");
     }
 }

@@ -1,7 +1,7 @@
 // src/lib/routes/router_table.rs
 
 // dependencies
-use crate::routes::router::HandlerFn;
+use crate::types::HandlerFn;
 use hyper::Method;
 use matchit::{Params, Router as MatchitRouter};
 use std::collections::HashMap;
