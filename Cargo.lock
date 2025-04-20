@@ -1491,7 +1491,7 @@ dependencies = [
 
 [[package]]
 name = "shuttle-hyper-template"
-version = "0.14.0"
+version = "0.15.0"
 dependencies = [
  "http-body-util",
  "hyper",
@@ -1503,6 +1503,7 @@ dependencies = [
  "shuttle-runtime",
  "thiserror 2.0.12",
  "tokio",
+ "tower",
  "tracing",
 ]
 

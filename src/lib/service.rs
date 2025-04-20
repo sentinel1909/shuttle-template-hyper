@@ -4,6 +4,7 @@
 use crate::actors::analytics::AnalyticsMessage;
 use crate::actors::ping::PingMessage;
 use crate::init::build_route_table;
+use crate::middleware::Logger;
 use crate::routes::router;
 use crate::state::AppState;
 use crate::utilities::shutdown_signal;
@@ -17,6 +18,7 @@ use std::pin::pin;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc::Sender;
+use tower::ServiceBuilder;
 
 // struct type to represent our service that runs on Shuttle
 pub struct HyperService {
@@ -57,14 +59,16 @@ impl Service for HyperService {
                 Ok((stream, _)) = listener.accept() => {
                     let io = TokioIo::new(stream);
                     let state = state.clone();
-                    let conn = http.serve_connection(io, service_fn(move |req| {
+                    let svc = service_fn(move |req| {
                         let state = state.clone();
                         async move { router(req, state).await }
-                    }));
+                    });
+                    let svc = ServiceBuilder::new().layer_fn(Logger::new).service(svc);
+                    let conn = http.serve_connection(io, svc );
                     let fut = graceful.watch(conn);
                     tokio::spawn(async move {
                         if let Err(e) = fut.await {
-                            eprintln!("Error serving conection: {:?}", e);
+                            eprintln!("Error serving connection: {:?}", e);
                         }
                     });
                 },
