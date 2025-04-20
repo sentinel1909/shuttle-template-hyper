@@ -1,6 +1,7 @@
 // src/lib/service.rs
 
 // dependencies
+use crate::actors::analytics::AnalyticsMessage;
 use crate::actors::ping::PingMessage;
 use crate::init::build_route_table;
 use crate::routes::router;
@@ -19,7 +20,8 @@ use tokio::sync::mpsc::Sender;
 
 // struct type to represent our service that runs on Shuttle
 pub struct HyperService {
-    pub tx: Sender<PingMessage>,
+    pub analytics_tx: Sender<AnalyticsMessage>,
+    pub ping_tx: Sender<PingMessage>,
 }
 
 // implement the Service trait for the HyperService type
@@ -31,8 +33,9 @@ impl Service for HyperService {
 
         // create the application state
         let state = AppState {
+            analytics_tx: self.analytics_tx.clone(),
+            ping_tx: self.ping_tx.clone(),
             routes: Arc::new(table),
-            ping_tx: self.tx.clone(),
         };
 
         // set up a listener, using the Shuttle provided address

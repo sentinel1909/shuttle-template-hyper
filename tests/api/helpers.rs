@@ -7,7 +7,7 @@ use hyper_util::rt::TokioIo;
 use reqwest::Client;
 use shuttle_hyper_template_lib::init::build_route_table;
 use shuttle_hyper_template_lib::routes::router;
-use shuttle_hyper_template_lib::{AppState, PingCounterActor};
+use shuttle_hyper_template_lib::{AnalyticsActor, AppState, PingCounterActor};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -56,11 +56,13 @@ pub async fn start_test_server_with_state(state: AppState) -> SocketAddr {
 
 // start a server
 pub async fn start_test_server() -> SocketAddr {
-    let (tx, _handle) = PingCounterActor::start();
+    let (ping_tx, _handle) = PingCounterActor::start_ping_actor();
+    let (analytics_tx, _handle) = AnalyticsActor::start_analytics_actor();
 
     let state = AppState {
+        analytics_tx,
+        ping_tx,
         routes: Arc::new(build_route_table()),
-        ping_tx: tx,
     };
 
     start_test_server_with_state(state).await

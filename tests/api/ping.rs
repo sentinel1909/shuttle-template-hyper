@@ -3,6 +3,7 @@
 // dependencies
 use crate::helpers::{get_test_client, start_test_server, start_test_server_with_state};
 use serde::Deserialize;
+use shuttle_hyper_template_lib::AnalyticsMessage;
 use shuttle_hyper_template_lib::actors::PingMessage;
 use shuttle_hyper_template_lib::init::build_route_table;
 use shuttle_hyper_template_lib::state::AppState;
@@ -43,12 +44,14 @@ async fn ping_route_returns_200_ok() {
 #[tokio::test]
 async fn ping_route_returns_502_when_actor_dropped() {
     // Arrange
-    let (tx, rx) = mpsc::channel::<PingMessage>(1);
-    drop(rx);
+    let (ping_tx, ping_rx) = mpsc::channel::<PingMessage>(1);
+    let (analytics_tx, _analytics_rx) = mpsc::channel::<AnalyticsMessage>(1);
+    drop(ping_rx);
 
     let state = AppState {
+        analytics_tx,
+        ping_tx,
         routes: Arc::new(build_route_table()),
-        ping_tx: tx,
     };
 
     let addr = start_test_server_with_state(state).await;

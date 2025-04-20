@@ -19,13 +19,13 @@ pub struct PingCounterActor {
 }
 
 impl PingCounterActor {
-    pub fn start() -> (Sender<PingMessage>, JoinHandle<()>) {
+    pub fn start_ping_actor() -> (Sender<PingMessage>, JoinHandle<()>) {
         let (tx, rx) = mpsc::channel(32);
 
-        let actor = PingCounterActor { rx, count: 0 };
+        let ping_actor = PingCounterActor { rx, count: 0 };
 
         let handle = spawn(async move {
-            actor.run().await;
+            ping_actor.run().await;
         });
 
         (tx, handle)

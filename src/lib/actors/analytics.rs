@@ -2,7 +2,9 @@
 
 // dependencies
 use std::collections::HashMap;
-use tokio::sync::{mpsc, oneshot};
+use tokio::spawn;
+use tokio::sync::mpsc;
+use tokio::sync::oneshot;
 
 // enum type to define the possible messages for the analytics actor
 pub enum AnalyticsMessage {
@@ -24,10 +26,11 @@ pub struct AnalyticsActor;
 
 // methods for the AnalyticsActor type
 impl AnalyticsActor {
-    pub fn start() -> mpsc::Sender<AnalyticsMessage> {
+    pub fn start_analytics_actor() -> (mpsc::Sender<AnalyticsMessage>, tokio::task::JoinHandle<()>)
+    {
         let (tx, mut rx) = mpsc::channel::<AnalyticsMessage>(8);
         let mut counters: HashMap<String, usize> = HashMap::new();
-        tokio::spawn(async move {
+        let handle = spawn(async move {
             while let Some(msg) = rx.recv().await {
                 match msg {
                     AnalyticsMessage::GetCount { reply, key } => {
@@ -46,7 +49,7 @@ impl AnalyticsActor {
             }
         });
 
-        tx
+        (tx, handle)
     }
 }
 
@@ -65,7 +68,7 @@ mod tests {
             key: "ping".to_string(),
             reply: tx,
         };
-        let actor_tx = AnalyticsActor::start();
+        let (actor_tx, _handle) = AnalyticsActor::start_analytics_actor();
         actor_tx.send(msg).await.expect("failed to send message");
         let count = rx.await.expect("actor did not respond");
         assert_eq!(count, 0);
@@ -73,7 +76,7 @@ mod tests {
 
     #[tokio::test]
     async fn returns_one_after_one_increment() {
-        let actor_tx = AnalyticsActor::start();
+        let (actor_tx, _handle) = AnalyticsActor::start_analytics_actor();
         let (inc_tx, inc_rx) = oneshot::channel();
         let inc_msg = AnalyticsMessage::Increment {
             key: "ping".to_string(),
@@ -100,7 +103,7 @@ mod tests {
 
     #[tokio::test]
     async fn returns_all_counts() {
-        let actor_tx = AnalyticsActor::start();
+        let (actor_tx, _handle) = AnalyticsActor::start_analytics_actor();
 
         for key in ["ping", "ping", "pong"] {
             let (tx, rx) = oneshot::channel();

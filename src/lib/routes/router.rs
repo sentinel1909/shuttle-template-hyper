@@ -1,6 +1,7 @@
 // src/lib/routes/router.rs
 
 // dependencies
+use crate::actors::analytics::AnalyticsMessage;
 use crate::actors::ping::PingMessage;
 use crate::errors::ApiError;
 use crate::state::AppState;
@@ -59,6 +60,26 @@ pub fn handle_health_check(_req: Request<Incoming>, _state: AppState) -> Handler
     })
 }
 
+// metrics handler function
+pub fn handle_metrics(_req: Request<Incoming>, state: AppState) -> HandlerResult {
+    Box::pin(async move {
+        let (tx, rx) = oneshot::channel();
+
+        state
+            .analytics_tx
+            .send(crate::AnalyticsMessage::GetAll { reply: tx })
+            .await
+            .map_err(|_| ApiError::ActorUnavailable)?;
+
+        let data = rx.await.map_err(|_| ApiError::ActorFailed)?;
+
+        let mut response = Response::new(json_response_msg(data));
+        set_content_type_json(&mut response);
+
+        Ok(response)
+    })
+}
+
 // ping handler function
 pub fn handle_ping(_req: Request<Incoming>, state: AppState) -> HandlerResult {
     Box::pin(async move {
@@ -69,6 +90,19 @@ pub fn handle_ping(_req: Request<Incoming>, state: AppState) -> HandlerResult {
             .send(PingMessage::Ping)
             .await
             .map_err(|_| ApiError::ActorUnavailable)?;
+
+        let (tx, rx) = oneshot::channel();
+
+        state
+            .analytics_tx
+            .send(AnalyticsMessage::Increment {
+                key: "ping".to_string(),
+                reply: tx,
+            })
+            .await
+            .map_err(|_| ApiError::ActorUnavailable)?;
+
+        rx.await.map_err(|_| ApiError::ActorFailed)?;
 
         let mut response = Response::new(json_response_msg(PingResponse {
             msg: "Pong".to_string(),
@@ -86,7 +120,7 @@ pub async fn router(
 ) -> Result<RouterResponse, ApiError> {
     let method = request.method();
     let path = request.uri().path();
-    match state.routes.at(&method, path) {
+    match state.routes.at(method, path) {
         Some((handler_fn, _params)) => handler_fn(request, state).await,
         None => {
             tracing::info!("Not found handler reached");

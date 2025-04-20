@@ -3,10 +3,10 @@
 // dependencies
 use http_body_util::{
     Empty, Full,
-    {combinators::BoxBody, BodyExt},
+    {BodyExt, combinators::BoxBody},
 };
 use hyper::body::Bytes;
-use hyper::header::{HeaderValue, CONTENT_TYPE};
+use hyper::header::{CONTENT_TYPE, HeaderValue};
 use hyper::{Error, Response};
 use serde::Serialize;
 use tokio::signal;

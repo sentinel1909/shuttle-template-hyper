@@ -3,6 +3,7 @@
 // dependencies
 use crate::helpers::{get_test_client, start_test_server, start_test_server_with_state};
 use serde::Deserialize;
+use shuttle_hyper_template_lib::AnalyticsMessage;
 use shuttle_hyper_template_lib::actors::PingMessage;
 use shuttle_hyper_template_lib::init::build_route_table;
 use shuttle_hyper_template_lib::state::AppState;
@@ -52,11 +53,12 @@ async fn count_route_returns_200_ok_and_correct_ping_count() {
 #[tokio::test]
 async fn count_route_returns_500_when_actor_does_not_respond() {
     // Arrange: actor receives GetCount but never replies
-    let (tx, mut rx) = mpsc::channel::<PingMessage>(1);
+    let (ping_tx, mut ping_rx) = mpsc::channel::<PingMessage>(1);
+    let (analytics_tx, _analytics_rx) = mpsc::channel::<AnalyticsMessage>(1);
 
     // Spawn an actor that ignores GetCount messages
     tokio::spawn(async move {
-        while let Some(msg) = rx.recv().await {
+        while let Some(msg) = ping_rx.recv().await {
             match msg {
                 PingMessage::GetCount(_reply_tx) => {
                     // Intentionally drop the reply sender — simulates silent failure
@@ -70,7 +72,8 @@ async fn count_route_returns_500_when_actor_does_not_respond() {
 
     let state = AppState {
         routes: Arc::new(build_route_table()),
-        ping_tx: tx,
+        analytics_tx,
+        ping_tx,
     };
 
     let addr = start_test_server_with_state(state).await;
