@@ -3,8 +3,9 @@
 // dependencies
 use std::collections::HashMap;
 use tokio::spawn;
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::{self, Receiver, Sender};
 use tokio::sync::oneshot;
+use tokio::task::JoinHandle;
 
 // enum type to define the possible messages for the analytics actor
 pub enum AnalyticsMessage {
@@ -22,34 +23,41 @@ pub enum AnalyticsMessage {
 }
 
 // struct type to represent the Analytics actor
-pub struct AnalyticsActor;
+pub struct AnalyticsActor {
+    rx: Receiver<AnalyticsMessage>,
+}
 
 // methods for the AnalyticsActor type
 impl AnalyticsActor {
-    pub fn start_analytics_actor() -> (mpsc::Sender<AnalyticsMessage>, tokio::task::JoinHandle<()>)
-    {
-        let (tx, mut rx) = mpsc::channel::<AnalyticsMessage>(8);
-        let mut counters: HashMap<String, usize> = HashMap::new();
+    pub fn start_analytics_actor() -> (Sender<AnalyticsMessage>, JoinHandle<()>) {
+        let (tx, rx) = mpsc::channel::<AnalyticsMessage>(32);
+        let actor = Self { rx };
         let handle = spawn(async move {
-            while let Some(msg) = rx.recv().await {
-                match msg {
-                    AnalyticsMessage::GetCount { reply, key } => {
-                        let count = counters.get(&key).copied().unwrap_or(0);
-                        let _ = reply.send(count);
-                    }
-                    AnalyticsMessage::Increment { reply, key } => {
-                        let count = counters.entry(key).or_insert(0);
-                        *count += 1;
-                        let _ = reply.send(());
-                    }
-                    AnalyticsMessage::GetAll { reply } => {
-                        let _ = reply.send(counters.clone());
-                    }
+            actor.run().await;
+        });
+        (tx, handle)
+    }
+
+    async fn run(mut self) {
+        let mut counters: HashMap<String, usize> = HashMap::new();
+        while let Some(msg) = self.rx.recv().await {
+            match msg {
+                AnalyticsMessage::GetCount { reply, key } => {
+                    let count = counters.get(&key).copied().unwrap_or(0);
+                    let _ = reply.send(count);
+                }
+                AnalyticsMessage::Increment { reply, key } => {
+                    let count = counters.entry(key).or_insert(0);
+                    *count += 1;
+                    let _ = reply.send(());
+                }
+                AnalyticsMessage::GetAll { reply } => {
+                    let _ = reply.send(counters.clone());
                 }
             }
-        });
+        }
 
-        (tx, handle)
+        tracing::info!("AnalyticsActor shutting down.");
     }
 }
 
